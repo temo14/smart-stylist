@@ -42,6 +42,9 @@ public sealed class ShopOptions
 
     /// <summary>Regex a product URL must match, e.g. to keep one locale or the men's section.</summary>
     public string? ProductUrlPattern { get; set; }
+
+    /// <summary>Free text for people reading the config, e.g. why a shop is disabled. Not used by code.</summary>
+    public string? Note { get; set; }
 }
 
 public sealed class BrowserOptions

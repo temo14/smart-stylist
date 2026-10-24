@@ -47,7 +47,70 @@ internal static class JsonLdProductParser
             }
         }
 
-        return ParseMetaTags(document, productUrl, fallbackCurrency);
+        return ParseMicrodata(document, productUrl, fallbackCurrency)
+            ?? ParseMetaTags(document, productUrl, fallbackCurrency);
+    }
+
+    /// <summary>schema.org microdata (itemprop attributes), used by many WooCommerce, OpenCart and older platforms.</summary>
+    private static ScrapedProduct? ParseMicrodata(AngleSharp.Html.Dom.IHtmlDocument document, Uri productUrl, string fallbackCurrency)
+    {
+        var scope = document.QuerySelector("[itemtype*='schema.org/Product']");
+        if (scope is null)
+        {
+            return null;
+        }
+
+        string? Prop(AngleSharp.Dom.IElement root, string name)
+        {
+            var element = root.QuerySelector($"[itemprop='{name}']");
+            var value = element?.GetAttribute("content") ?? element?.GetAttribute("href") ?? element?.TextContent;
+            return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+        }
+
+        var title = Prop(scope, "name");
+        if (title is null)
+        {
+            return null;
+        }
+
+        var offers = new List<ScrapedOffer>();
+        var offerScopes = scope.QuerySelectorAll("[itemprop='offers']").ToList();
+        foreach (var offer in offerScopes.Count > 0 ? offerScopes : [scope])
+        {
+            var price = PriceParser.Parse(Prop(offer, "price") ?? Prop(offer, "lowPrice"));
+            if (price is null)
+            {
+                continue;
+            }
+
+            var availability = Prop(offer, "availability");
+            bool? inStock = availability is null ? null
+                : availability.Contains("InStock", StringComparison.OrdinalIgnoreCase) ? true
+                : availability.Contains("OutOfStock", StringComparison.OrdinalIgnoreCase) ? false
+                : null;
+
+            offers.Add(new ScrapedOffer(
+                VariantKey: Prop(offer, "sku") ?? (offers.Count == 0 ? "" : $"#{offers.Count}"),
+                SizeLabel: Prop(offer, "size"),
+                Price: price.Value,
+                ListPrice: null,
+                Currency: (Prop(offer, "priceCurrency") ?? fallbackCurrency).ToUpperInvariant(),
+                InStock: inStock));
+        }
+
+        if (offers.Count == 0)
+        {
+            return null;
+        }
+
+        var url = StripQuery(productUrl);
+        return new ScrapedProduct(
+            ExternalId: Prop(scope, "sku") ?? Prop(scope, "productID") ?? url,
+            Url: url,
+            Title: System.Net.WebUtility.HtmlDecode(title),
+            Brand: Prop(scope, "brand"),
+            ImageUrl: Prop(scope, "image"),
+            Offers: DistinctByVariant(offers));
     }
 
     private static JsonElement? FindProductNode(JsonElement element)

@@ -36,4 +36,29 @@ public class SitemapReaderTests
 
         Assert.Equal(locs, SitemapReader.PreferProductSitemaps(locs));
     }
+
+    [Fact]
+    public void Ranks_the_shops_own_locale_first_and_drops_media_sitemaps()
+    {
+        string[] fromRobots =
+        [
+            "https://www.levi.com/FI/en/sitemap.xml",
+            "https://www.levi.com/sitemap_kr_image.xml",
+            "https://www.levi.com/US/en_US/sitemap.xml",
+        ];
+
+        var ranked = SitemapReader.Rank(fromRobots, SitemapReader.Tokens("/US/en_US")).ToList();
+
+        Assert.Equal(["https://www.levi.com/US/en_US/sitemap.xml", "https://www.levi.com/FI/en/sitemap.xml"], ranked);
+    }
+
+    [Theory]
+    [InlineData("<!DOCTYPE html><html><head><meta charset=utf-8></head></html>", "web page")]
+    [InlineData("   ", "empty")]
+    public void Explains_responses_that_are_not_sitemaps(string body, string expected)
+    {
+        var ex = Assert.Throws<InvalidDataException>(() => SitemapReader.Decode(System.Text.Encoding.UTF8.GetBytes(body)));
+
+        Assert.Contains(expected, ex.Message);
+    }
 }

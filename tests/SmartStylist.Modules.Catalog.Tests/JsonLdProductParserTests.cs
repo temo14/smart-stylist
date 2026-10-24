@@ -73,4 +73,19 @@ public class JsonLdProductParserTests
     [Fact]
     public void Returns_null_when_page_has_no_price() =>
         Assert.Null(JsonLdProductParser.Parse(FixtureFile.Read("no-price.html"), PageUrl, "USD"));
+
+    [Fact]
+    public void Reads_schema_org_microdata()
+    {
+        var product = JsonLdProductParser.Parse(FixtureFile.Read("microdata.html"), PageUrl, "USD");
+
+        Assert.NotNull(product);
+        Assert.Equal("Linen Shirt", product.Title);
+        Assert.Equal("LS-77", product.ExternalId);
+        Assert.Equal("Massimo", product.Brand);
+        var offer = Assert.Single(product.Offers);
+        Assert.Equal(149m, offer.Price);
+        Assert.Equal("GEL", offer.Currency);
+        Assert.True(offer.InStock);
+    }
 }

@@ -35,6 +35,7 @@ Other commands:
 ```bash
 dotnet run --project src/SmartStylist.Worker -- collect levis uniqlo   # only some shops (full 300 products)
 dotnet run --project src/SmartStylist.Worker -- report                 # print the report again
+dotnet run --project src/SmartStylist.Worker -- probe <product url> [--browser]   # what the parser reads from one page; saves the HTML
 dotnet run --project src/SmartStylist.Worker                           # leave running: collects every shop daily at 05:00 UTC
 dotnet run --project src/SmartStylist.Web                              # http://localhost:5227 (report) and /hangfire (jobs)
 ```
@@ -72,31 +73,36 @@ Failing shops list the reason under the table, such as "HTTP 403" (blocked) or "
 ## The shops
 
 Picked from your mailbox: shops you ordered from, then shops whose sale newsletters you get most.
+Status after the first real run (2026-10-24, 20 products per shop):
 
-| Key | Shop | Why |
-| --- | --- | --- |
-| `levis` | Levi's | Ordered from |
-| `lululemon` | Lululemon | Ordered from |
-| `adidas` | Adidas | Ordered from |
-| `reebok` | Reebok | Ordered from |
-| `underarmour` | Under Armour | Ordered from |
-| `steepandcheap` | Steep & Cheap | Ordered from |
-| `kohls` | Kohl's | Ordered from |
-| `dressup` | Dressup.ge | Ordered from, Georgian shop (GEL) |
-| `uniqlo` | Uniqlo | Frequent newsletters |
-| `patagonia` | Patagonia | Frequent newsletters |
-| `jcrew` | J.Crew | Frequent newsletters |
-| `brooksbrothers` | Brooks Brothers | Frequent newsletters |
-| `lacoste` | Lacoste | Frequent newsletters |
-| `ssense` | SSENSE | Frequent newsletters |
-| `mrporter` | Mr Porter | Frequent newsletters |
+| Key | Shop | Why picked | Run 1 |
+| --- | --- | --- | --- |
+| `reebok` | Reebok | Ordered from | **Clean** via Shopify feed |
+| `jcrew` | J.Crew | Newsletters | **Usable** via browser; prices but no sizes |
+| `dressup` | Dressup.ge | Ordered from (GEL) | Pages load but had no JSON-LD; microdata fallback added, retry |
+| `patagonia` | Patagonia | Newsletters | Browser found pages, no price tags; microdata fallback added, retry |
+| `uniqlo` | Uniqlo | Newsletters | Sitemap read the wrong locale; locale ranking added, retry |
+| `mrporter` | Mr Porter | Newsletters | Same, retry |
+| `lacoste` | Lacoste | Newsletters | Same, retry |
+| `steepandcheap` | Steep & Cheap | Ordered from | Sitemap returned a web page or nothing; retry, then `probe` |
+| `levis` | Levi's | Ordered from | Off: blocked (403) even in the browser |
+| `lululemon` | Lululemon | Ordered from | Off: blocked (HTTP/2 error) in the browser |
+| `adidas` | Adidas | Ordered from | Off: blocked (403) |
+| `underarmour` | Under Armour | Ordered from | Off: blocked (418) |
+| `kohls` | Kohl's | Ordered from | Off: blocked (403) |
+| `brooksbrothers` | Brooks Brothers | Newsletters | Off: blocked (403) |
+| `ssense` | SSENSE | Newsletters | Off: blocked (403) |
 
-Backups if some fail: Arket, Massimo Dutti, Clarks, ECCO, Timberland, Huckberry, Thursday Boots.
+Backups added after run 1: Thursday Boots, Huckberry, Clarks, ECCO, Timberland, Massimo Dutti.
+
+Shops that block automated visits are switched off rather than retried every day. They are candidates for an
+affiliate product feed (most of them run affiliate programs with full product feeds) or for prices read from
+their sale newsletters.
 
 The `ProductUrlPattern` values in `src/SmartStylist.Worker/appsettings.json` are educated guesses at each shop's
-product URL shape (keep the US locale, men's section where obvious). They have not been checked against the
-live sites yet. If a shop fails with "no product URLs in the sitemap", open its sitemap in a browser and fix the
-pattern, or set `SitemapUrl` directly.
+product URL shape. If a shop fails with "no product URLs in the sitemap", open its sitemap in a browser and fix the
+pattern, or set `SitemapUrl` directly. If pages load but give no price, run `probe` on one product URL and share
+the saved HTML.
 
 ### Adding or tuning a shop
 

@@ -17,6 +17,11 @@ var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings
     Args = command is null ? args : [],
 });
 
+// Disposed after the host (declared before it), so shutdown messages still reach the file.
+using var runLog = new RunLogFile(Path.Combine(builder.Environment.ContentRootPath, "logs"));
+builder.Logging.AddProvider(runLog);
+builder.Services.AddSingleton(runLog);
+
 builder.Services.AddCatalogModule(builder.Configuration);
 
 if (command is null)

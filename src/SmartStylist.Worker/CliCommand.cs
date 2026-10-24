@@ -49,6 +49,7 @@ internal sealed record CliCommand(string Name, IReadOnlyList<string> ShopKeys, i
 
         await using var scope = services.CreateAsyncScope();
         var provider = scope.ServiceProvider;
+        var runLog = provider.GetRequiredService<RunLogFile>();
 
         if (Name == "probe")
         {
@@ -74,16 +75,22 @@ internal sealed record CliCommand(string Name, IReadOnlyList<string> ShopKeys, i
                 await using var shopScope = services.CreateAsyncScope();
                 var run = await shopScope.ServiceProvider.GetRequiredService<PriceCollectionService>()
                     .CollectAsync(key, Limit, cancellationToken);
-                Console.WriteLine($"{key,-16} {run.Status,-10} {run.Strategy?.ToString() ?? "-",-14} {run.ProductsSeen,5} products {run.SnapshotsWritten,6} prices");
+                var line = $"{key,-16} {run.Status,-10} {run.Strategy?.ToString() ?? "-",-14} {run.ProductsSeen,5} products {run.SnapshotsWritten,6} prices";
+                Console.WriteLine(line);
+                runLog.WriteLine(line);
             }
         }
 
         if (Name is "collect" or "report")
         {
             var report = await provider.GetRequiredService<DataQualityReport>().BuildAsync(cancellationToken);
-            ReportPrinter.Print(report, Console.Out);
+            var text = new StringWriter();
+            ReportPrinter.Print(report, text);
+            Console.Write(text);
+            runLog.WriteLine($"Report:{Environment.NewLine}{text}");
         }
 
+        Console.WriteLine($"Run log: {runLog.FilePath}");
         return 0;
     }
 

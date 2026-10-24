@@ -1,0 +1,31 @@
+<!doctype html>
+<html><head>
+<title>Oxford Shirt</title>
+<link rel="canonical" href="https://shop.example.com/p/oxford-shirt">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[]}</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Product",
+  "name": "Oxford Shirt &amp; Tie",
+  "sku": "OX-1",
+  "brand": { "@type": "Brand", "name": "Tommy Hilfiger" },
+  "image": ["https://cdn.example.com/ox1.jpg", "https://cdn.example.com/ox2.jpg"],
+  "offers": [
+    {
+      "@type": "Offer", "sku": "OX-1-M", "price": "169.50", "priceCurrency": "gel",
+      "availability": "https://schema.org/InStock",
+      "itemOffered": { "@type": "Product", "size": "M" },
+      "priceSpecification": [
+        { "@type": "UnitPriceSpecification", "priceType": "https://schema.org/StrikethroughPrice", "price": 339, "priceCurrency": "GEL" }
+      ]
+    },
+    {
+      "@type": "Offer", "sku": "OX-1-L", "price": 169.5, "priceCurrency": "GEL",
+      "availability": "https://schema.org/OutOfStock",
+      "itemOffered": { "@type": "Product", "size": { "@type": "SizeSpecification", "name": "L" } }
+    }
+  ]
+}
+</script>
+</head><body></body></html>

@@ -1,0 +1,31 @@
+{
+  "products": [
+    {
+      "id": 7001,
+      "title": "Slim Chino",
+      "handle": "slim-chino",
+      "vendor": "Example Co",
+      "options": [
+        { "name": "Color", "position": 1 },
+        { "name": "Waist", "position": 2 },
+        { "name": "Length", "position": 3 }
+      ],
+      "variants": [
+        { "id": 9001, "title": "Navy / 32 / 32", "option1": "Navy", "option2": "32", "option3": "32", "price": "59.40", "compare_at_price": "99.00", "available": true },
+        { "id": 9002, "title": "Navy / 34 / 32", "option1": "Navy", "option2": "34", "option3": "32", "price": "59.40", "compare_at_price": "59.40", "available": false }
+      ],
+      "images": [ { "src": "https://cdn.example.com/chino.jpg" } ]
+    },
+    {
+      "id": 7002,
+      "title": "Gift Card",
+      "handle": "gift-card",
+      "vendor": "Example Co",
+      "options": [ { "name": "Title", "position": 1 } ],
+      "variants": [
+        { "id": 9100, "title": "Default Title", "option1": "Default Title", "price": "25.00", "compare_at_price": null, "available": true }
+      ],
+      "images": []
+    }
+  ]
+}

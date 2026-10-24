@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Time.Testing;
 using SmartStylist.Modules.Catalog.Collection;
+using SmartStylist.Modules.Catalog.Newsletters;
 using SmartStylist.Modules.Catalog.Persistence;
 
 namespace SmartStylist.Modules.Catalog.Tests;
@@ -17,6 +18,10 @@ internal sealed class TestHost : IAsyncDisposable
     private readonly ServiceProvider _services;
 
     public FakeWeb Web { get; } = new();
+
+    public FakeExtractor Extractor { get; } = new();
+
+    public FakeLinks Links { get; } = new();
 
     public FakeTimeProvider Time { get; } = new(new DateTimeOffset(2026, 10, 24, 5, 0, 0, TimeSpan.Zero));
 
@@ -39,6 +44,8 @@ internal sealed class TestHost : IAsyncDisposable
         services.AddCatalogCollection();
         services.AddHttpClient(HttpPageFetcher.ClientName).ConfigurePrimaryHttpMessageHandler(() => Web);
         services.AddSingleton<TimeProvider>(Time);
+        services.AddSingleton<INewsletterExtractor>(Extractor);
+        services.AddSingleton<ILinkResolver>(Links);
 
         // No headless browser in unit tests.
         var browser = services.Single(d => d.ImplementationType == typeof(BrowserJsonLdCollector));
@@ -64,6 +71,41 @@ internal sealed class TestHost : IAsyncDisposable
     {
         await _services.DisposeAsync();
         await _connection.DisposeAsync();
+    }
+}
+
+internal sealed class FakeExtractor : INewsletterExtractor
+{
+    public List<NewsletterInput> Inputs { get; } = [];
+
+    public Func<NewsletterInput, NewsletterExtraction> Respond { get; set; } = _ => NewsletterExtraction.Empty;
+
+    public Task<NewsletterExtraction> ExtractAsync(NewsletterInput input, CancellationToken cancellationToken)
+    {
+        Inputs.Add(input);
+        return Task.FromResult(Respond(input));
+    }
+}
+
+internal sealed class FakeLinks : ILinkResolver
+{
+    public Dictionary<string, Uri> Targets { get; } = [];
+
+    public Task<Uri?> ResolveAsync(string link, ShopDomains shop, CancellationToken cancellationToken) =>
+        Task.FromResult(Targets.GetValueOrDefault(link));
+}
+
+internal sealed class ListMailSource(params InboxMessage[] messages) : IMailSource
+{
+    public string Description => "test";
+
+    public async IAsyncEnumerable<InboxMessage> ReadAsync(DateTimeOffset since, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        foreach (var message in messages)
+        {
+            await Task.Yield();
+            yield return message;
+        }
     }
 }
 

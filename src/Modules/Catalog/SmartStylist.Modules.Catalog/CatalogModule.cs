@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using SmartStylist.Modules.Catalog.Collection;
+using SmartStylist.Modules.Catalog.Newsletters;
 using SmartStylist.Modules.Catalog.Persistence;
 using SmartStylist.Modules.Catalog.Reporting;
 
@@ -20,6 +21,7 @@ public static class CatalogModule
             .Bind(configuration.GetSection(CatalogOptions.SectionName))
             .Validate(o => o.Shops.Select(s => s.Key).Distinct().Count() == o.Shops.Count, "Shop keys must be unique.")
             .ValidateOnStart();
+        services.AddOptions<NewsletterOptions>().Bind(configuration.GetSection(NewsletterOptions.SectionName));
 
         var connectionString = configuration.GetConnectionString(ConnectionStringName)
             ?? throw new InvalidOperationException($"Missing connection string '{ConnectionStringName}'.");
@@ -65,6 +67,23 @@ public static class CatalogModule
         services.AddScoped<CollectPricesJob>();
         services.AddScoped<DataQualityReport>();
         services.AddSingleton(TimeProvider.System);
+
+        services.AddHttpClient<ILinkResolver, LinkResolver>(LinkResolver.ClientName, (sp, client) =>
+            {
+                client.Timeout = TimeSpan.FromSeconds(15);
+                client.DefaultRequestHeaders.UserAgent.ParseAdd(sp.GetRequiredService<IOptions<CatalogOptions>>().Value.UserAgent);
+            })
+            .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { AllowAutoRedirect = false });
+        services.AddSingleton<INewsletterExtractor, ClaudeNewsletterExtractor>();
+        services.AddScoped(sp => new NewsletterImportService(
+            sp.GetRequiredService<CatalogDbContext>(),
+            sp.GetRequiredService<INewsletterExtractor>(),
+            sp.GetRequiredService<ILinkResolver>(),
+            sp.GetRequiredService<IOptions<CatalogOptions>>(),
+            sp.GetRequiredService<IOptions<NewsletterOptions>>(),
+            sp.GetRequiredService<TimeProvider>(),
+            sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<NewsletterImportService>>()));
+        services.AddScoped<ImportNewslettersJob>();
         return services;
     }
 }

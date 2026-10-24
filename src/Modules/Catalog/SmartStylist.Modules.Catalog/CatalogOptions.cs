@@ -43,6 +43,12 @@ public sealed class ShopOptions
     /// <summary>Regex a product URL must match, e.g. to keep one locale or the men's section.</summary>
     public string? ProductUrlPattern { get; set; }
 
+    /// <summary>
+    /// Domains the shop's sale emails come from, e.g. "e.levi.com". When empty, the BaseUrl domain is used,
+    /// which already matches subdomains such as news.reebok.com for reebok.com.
+    /// </summary>
+    public List<string> EmailDomains { get; set; } = [];
+
     /// <summary>Free text for people reading the config, e.g. why a shop is disabled. Not used by code.</summary>
     public string? Note { get; set; }
 }

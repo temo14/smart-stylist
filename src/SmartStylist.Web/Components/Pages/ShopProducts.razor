@@ -1,0 +1,88 @@
+@page "/shops/{Key}"
+@inject CatalogDbContext Db
+
+<PageTitle>@(_shop?.Name ?? Key) · Smart Stylist</PageTitle>
+
+<p><a href="">← All shops</a></p>
+
+@if (_shop is null)
+{
+    <p>Unknown shop <code>@Key</code>.</p>
+}
+else
+{
+    <h1>@_shop.Name</h1>
+    <p class="lead">Latest price per product (lowest across sizes) and the range seen so far. Showing up to 200 products.</p>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Product</th><th class="num">Today</th><th class="num">Was</th><th class="num">Low</th><th class="num">High</th>
+                    <th class="num">Sizes</th><th class="num">In stock</th><th class="num">Days</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var p in _products)
+                {
+                    <tr>
+                        <td><a href="@p.Url" target="_blank" rel="noopener">@p.Title</a>@if (p.Brand is not null) { <div class="muted">@p.Brand</div> }</td>
+                        <td class="num">@Money(p.Today, p.Currency)</td>
+                        <td class="num">@(p.ListPrice is null ? "" : Money(p.ListPrice.Value, p.Currency))</td>
+                        <td class="num">@Money(p.Low, p.Currency)</td>
+                        <td class="num">@Money(p.High, p.Currency)</td>
+                        <td class="num">@p.Sizes</td>
+                        <td class="num">@p.InStock</td>
+                        <td class="num">@p.Days</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    [Parameter] public required string Key { get; set; }
+
+    private Shop? _shop;
+    private List<ProductRow> _products = [];
+
+    private sealed record ProductRow(string Title, string? Brand, string Url, string Currency, decimal Today, decimal? ListPrice,
+        decimal Low, decimal High, int Sizes, int InStock, int Days);
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _shop = await Db.Shops.AsNoTracking().SingleOrDefaultAsync(s => s.Key == Key);
+        if (_shop is null)
+        {
+            return;
+        }
+
+        var products = await Db.Products.AsNoTracking()
+            .Where(p => p.ShopId == _shop.Id)
+            .OrderByDescending(p => p.LastSeenAt).ThenBy(p => p.Title)
+            .Take(200)
+            .Select(p => new
+            {
+                p.Title, p.Brand, p.Url,
+                Snapshots = p.Snapshots.Select(s => new { s.ObservedOn, s.Price, s.ListPrice, s.Currency, s.InStock, s.SizeLabel }).ToList(),
+            })
+            .ToListAsync();
+
+        _products = products
+            .Where(p => p.Snapshots.Count > 0)
+            .Select(p =>
+            {
+                var lastDay = p.Snapshots.Max(s => s.ObservedOn);
+                var today = p.Snapshots.Where(s => s.ObservedOn == lastDay).ToList();
+                var cheapest = today.MinBy(s => s.Price)!;
+                return new ProductRow(p.Title, p.Brand, p.Url, cheapest.Currency, cheapest.Price, cheapest.ListPrice,
+                    p.Snapshots.Min(s => s.Price), p.Snapshots.Max(s => s.Price),
+                    today.Count(s => s.SizeLabel is not null), today.Count(s => s.InStock == true),
+                    p.Snapshots.Select(s => s.ObservedOn).Distinct().Count());
+            })
+            .ToList();
+    }
+
+    private static string Money(decimal amount, string currency) => $"{amount:0.00} {currency}";
+}

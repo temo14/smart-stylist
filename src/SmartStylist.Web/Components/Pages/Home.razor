@@ -1,0 +1,78 @@
+@page "/"
+@inject DataQualityReport Report
+
+<PageTitle>Data quality · Smart Stylist</PageTitle>
+
+<h1>Which shops give clean price data?</h1>
+<p class="lead">
+    The worker saves every tracked product's price once a day. This page grades each shop on the latest run.
+    Verdicts need about 30 days of history, so watch the <strong>Days</strong> column grow.
+</p>
+
+@if (_rows is null)
+{
+    <p>Loading…</p>
+}
+else if (_rows.Count == 0)
+{
+    <p>No shops yet. Run <code>dotnet run --project src/SmartStylist.Worker -- collect</code> first.</p>
+}
+else
+{
+    <div class="summary">
+        @foreach (var grade in new[] { DataGrade.Clean, DataGrade.Usable, DataGrade.Poor, DataGrade.Failing, DataGrade.NotRunYet })
+        {
+            <span class="pill grade-@grade.ToString().ToLowerInvariant()">@grade: @_rows.Count(r => r.Grade == grade)</span>
+        }
+    </div>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Shop</th><th>Grade</th><th>Source</th><th class="num">Products</th><th class="num">Pages ok</th>
+                    <th class="num">Sizes</th><th class="num">Stock</th><th class="num">On sale</th><th class="num">Days</th>
+                    <th class="num">Price moved</th><th>Last run</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in _rows.OrderByDescending(r => r.Grade).ThenBy(r => r.ShopName))
+                {
+                    <tr>
+                        <td><a href="shops/@row.ShopKey">@row.ShopName</a>@if (!row.Enabled) { <span class="muted"> (off)</span> }</td>
+                        <td><span class="pill grade-@row.Grade.ToString().ToLowerInvariant()">@row.Grade</span></td>
+                        <td>@(row.Strategy?.ToString() ?? "–")</td>
+                        <td class="num">@row.ProductsTracked</td>
+                        <td class="num">@row.PageSuccessRate.ToString("P0")</td>
+                        <td class="num">@row.SizeCoverage.ToString("P0")</td>
+                        <td class="num">@row.StockCoverage.ToString("P0")</td>
+                        <td class="num">@row.OnSaleShare.ToString("P0")</td>
+                        <td class="num">@row.DaysOfHistory</td>
+                        <td class="num">@row.ProductsWithPriceChange</td>
+                        <td>
+                            @(row.LastRunAt?.ToString("yyyy-MM-dd HH:mm") ?? "never")
+                            @if (row.LastError is not null && row.Grade is DataGrade.Failing or DataGrade.Poor)
+                            {
+                                <div class="error" title="@row.LastError">@Shorten(row.LastError)</div>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <p class="muted">
+        <strong>Clean</strong>: 90%+ of pages give a price and half or more of prices have a size.
+        <strong>Usable</strong>: 60%+ of pages give a price. <strong>Poor</strong>: below that.
+        <strong>Failing</strong>: no source worked on the last run.
+    </p>
+}
+
+@code {
+    private IReadOnlyList<ShopQuality>? _rows;
+
+    private static string Shorten(string error) => error.Length <= 180 ? error : error[..180] + "…";
+
+    protected override async Task OnInitializedAsync() => _rows = await Report.BuildAsync(CancellationToken.None);
+}

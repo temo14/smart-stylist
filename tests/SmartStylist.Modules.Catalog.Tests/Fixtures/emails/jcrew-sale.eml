@@ -1,0 +1,19 @@
+From: "J.Crew" <jcrew@e.jcrew.com>
+To: temo@example.com
+Subject: Extra 40% off sale styles ends Sunday
+Date: Fri, 23 Oct 2026 14:05:00 +0000
+Message-ID: <sale-2026-10-23@e.jcrew.com>
+MIME-Version: 1.0
+Content-Type: text/html; charset=utf-8
+
+<html><head><style>.x{color:red}</style></head><body>
+<table>
+  <tr><td><a href="https://click.e.jcrew.com/?qs=abc1"><img src="hero.jpg" alt="Extra 40% off sale styles"></a></td></tr>
+  <tr>
+    <td><a href="https://click.e.jcrew.com/?qs=chino"><img src="c.jpg" alt="Slim-fit chino"></a><br>Slim-fit chino<br><s>$89.50</s> $53.70</td>
+    <td><a href="https://click.e.jcrew.com/?qs=oxford"><img src="o.jpg" alt=""></a><br>Broken-in oxford shirt<br>$59.40</td>
+  </tr>
+  <tr><td>Use code&nbsp;SHOPNOW. Ends 10/25.</td><td></td></tr>
+  <tr><td><a href="https://click.e.jcrew.com/?qs=unsub">Unsubscribe</a></td></tr>
+</table>
+</body></html>

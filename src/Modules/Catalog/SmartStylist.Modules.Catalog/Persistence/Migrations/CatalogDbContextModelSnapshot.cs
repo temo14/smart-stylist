@@ -81,6 +81,93 @@ namespace SmartStylist.Modules.Catalog.Persistence.Migrations
                     b.ToTable("collection_runs", "catalog");
                 });
 
+            modelBuilder.Entity("SmartStylist.Modules.Catalog.Domain.NewsletterEmail", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Error")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("error");
+
+                    b.Property<string>("From")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("character varying(320)")
+                        .HasColumnName("from");
+
+                    b.Property<string>("MessageId")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("message_id");
+
+                    b.Property<int>("PricesWritten")
+                        .HasColumnType("integer")
+                        .HasColumnName("prices_written");
+
+                    b.Property<DateTimeOffset>("ProcessedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("processed_at");
+
+                    b.Property<int>("ProductsFound")
+                        .HasColumnType("integer")
+                        .HasColumnName("products_found");
+
+                    b.Property<int>("ProductsRejected")
+                        .HasColumnType("integer")
+                        .HasColumnName("products_rejected");
+
+                    b.Property<string>("PromoCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("promo_code");
+
+                    b.Property<DateTimeOffset>("ReceivedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("received_at");
+
+                    b.Property<DateOnly?>("SaleEndsOn")
+                        .HasColumnType("date")
+                        .HasColumnName("sale_ends_on");
+
+                    b.Property<int?>("ShopId")
+                        .HasColumnType("integer")
+                        .HasColumnName("shop_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("subject");
+
+                    b.HasKey("Id")
+                        .HasName("pk_newsletter_emails");
+
+                    b.HasIndex("MessageId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_newsletter_emails_message_id");
+
+                    b.HasIndex("ReceivedAt")
+                        .HasDatabaseName("ix_newsletter_emails_received_at");
+
+                    b.HasIndex("ShopId")
+                        .HasDatabaseName("ix_newsletter_emails_shop_id");
+
+                    b.ToTable("newsletter_emails", "catalog");
+                });
+
             modelBuilder.Entity("SmartStylist.Modules.Catalog.Domain.PriceSnapshot", b =>
                 {
                     b.Property<long>("Id")
@@ -127,6 +214,12 @@ namespace SmartStylist.Modules.Catalog.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
                         .HasColumnName("size_label");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("source");
 
                     b.Property<string>("VariantKey")
                         .IsRequired()
@@ -273,6 +366,17 @@ namespace SmartStylist.Modules.Catalog.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_collection_runs_shops_shop_id");
+
+                    b.Navigation("Shop");
+                });
+
+            modelBuilder.Entity("SmartStylist.Modules.Catalog.Domain.NewsletterEmail", b =>
+                {
+                    b.HasOne("SmartStylist.Modules.Catalog.Domain.Shop", "Shop")
+                        .WithMany()
+                        .HasForeignKey("ShopId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_newsletter_emails_shops_shop_id");
 
                     b.Navigation("Shop");
                 });

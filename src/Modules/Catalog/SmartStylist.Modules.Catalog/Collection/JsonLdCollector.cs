@@ -31,7 +31,7 @@ internal abstract class JsonLdCollector(
         if (urls.Count < request.MaxProducts)
         {
             var fromSitemap = await sitemapReader.GetProductUrlsAsync(
-                fetcher, request.ShopRoot, request.SitemapUrl, pattern, request.MaxProducts * 2, cancellationToken);
+                fetcher, request.ShopRoot, request.BaseUrl, request.SitemapUrl, pattern, request.MaxProducts * 2, cancellationToken);
             var known = new HashSet<string>(urls, StringComparer.OrdinalIgnoreCase);
             urls.AddRange(fromSitemap.Urls.Where(known.Add).Take(request.MaxProducts - urls.Count));
             sitemapError = fromSitemap.LastError;

@@ -9,6 +9,7 @@ using SmartStylist.Worker;
 //   dotnet run -- report               -> print the data-quality report
 //   dotnet run -- migrate              -> apply database migrations and sync shops from config
 //   dotnet run -- install-browser      -> download headless Chromium for shops that need a real browser
+//   dotnet run -- probe <url> [--browser]  -> show what the parser reads from one product page and save the HTML
 var command = CliCommand.Parse(args);
 
 var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings

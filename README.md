@@ -72,32 +72,23 @@ Failing shops list the reason under the table, such as "HTTP 403" (blocked) or "
 
 ## The shops
 
-Picked from your mailbox: shops you ordered from, then shops whose sale newsletters you get most.
-Status after the first real run (2026-10-24, 20 products per shop):
+Picked from your mailbox: shops you ordered from, then shops whose sale newsletters you get most, then backups.
+Status after two real runs on 2026-10-24 (20 products per shop):
 
-| Key | Shop | Why picked | Run 1 |
-| --- | --- | --- | --- |
-| `reebok` | Reebok | Ordered from | **Clean** via Shopify feed |
-| `jcrew` | J.Crew | Newsletters | **Usable** via browser; prices but no sizes |
-| `dressup` | Dressup.ge | Ordered from (GEL) | Pages load but had no JSON-LD; microdata fallback added, retry |
-| `patagonia` | Patagonia | Newsletters | Browser found pages, no price tags; microdata fallback added, retry |
-| `uniqlo` | Uniqlo | Newsletters | Sitemap read the wrong locale; locale ranking added, retry |
-| `mrporter` | Mr Porter | Newsletters | Same, retry |
-| `lacoste` | Lacoste | Newsletters | Same, retry |
-| `steepandcheap` | Steep & Cheap | Ordered from | Sitemap returned a web page or nothing; retry, then `probe` |
-| `levis` | Levi's | Ordered from | Off: blocked (403) even in the browser |
-| `lululemon` | Lululemon | Ordered from | Off: blocked (HTTP/2 error) in the browser |
-| `adidas` | Adidas | Ordered from | Off: blocked (403) |
-| `underarmour` | Under Armour | Ordered from | Off: blocked (418) |
-| `kohls` | Kohl's | Ordered from | Off: blocked (403) |
-| `brooksbrothers` | Brooks Brothers | Newsletters | Off: blocked (403) |
-| `ssense` | SSENSE | Newsletters | Off: blocked (403) |
+| Key | Shop | Status |
+| --- | --- | --- |
+| `reebok` | Reebok | **Clean** via Shopify feed: sizes, stock and sale prices |
+| `uniqlo` | Uniqlo | **Usable** via browser: sizes and stock; some sitemap products are gone (404) |
+| `jcrew` | J.Crew | **Usable** via browser: prices and stock, no sizes |
+| `thursdayboots` | Thursday Boots | **Poor** via browser; feed rate-limited (429). URL pattern added, 429 now retried once |
+| `dressup` | Dressup.ge | Pages load but no price data found. Needs a `probe` of one product page |
+| `patagonia` | Patagonia | Same as Dressup.ge |
+| `levis`, `lululemon`, `adidas`, `underarmour`, `kohls`, `brooksbrothers`, `ssense` | | Off: blocked in run 1 |
+| `clarks`, `huckberry`, `timberland`, `ecco`, `lacoste`, `massimodutti`, `mrporter`, `steepandcheap` | | Off: blocked in run 2 |
 
-Backups added after run 1: Thursday Boots, Huckberry, Clarks, ECCO, Timberland, Massimo Dutti.
-
-Shops that block automated visits are switched off rather than retried every day. They are candidates for an
-affiliate product feed (most of them run affiliate programs with full product feeds) or for prices read from
-their sale newsletters.
+Shops that block automated visits are switched off rather than retried every day; each has a `Note` in config
+saying how it failed. They are candidates for an affiliate product feed or for prices read from their sale
+newsletters.
 
 The `ProductUrlPattern` values in `src/SmartStylist.Worker/appsettings.json` are educated guesses at each shop's
 product URL shape. If a shop fails with "no product URLs in the sitemap", open its sitemap in a browser and fix the

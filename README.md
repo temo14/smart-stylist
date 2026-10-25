@@ -36,6 +36,7 @@ Other commands:
 dotnet run --project src/SmartStylist.Worker -- collect levis uniqlo   # only some shops (full 300 products)
 dotnet run --project src/SmartStylist.Worker -- report                 # print the report again
 dotnet run --project src/SmartStylist.Worker -- probe <product url> [--browser]   # what the parser reads from one page; saves the HTML
+dotnet run --project src/SmartStylist.Worker -- newsletters [--folder <dir>]           # price new sale emails (mailbox, or saved .eml files)
 dotnet run --project src/SmartStylist.Worker                           # leave running: collects every shop daily at 05:00 UTC
 dotnet run --project src/SmartStylist.Web                              # http://localhost:5227 (report) and /hangfire (jobs)
 ```
@@ -87,8 +88,8 @@ Status after two real runs on 2026-10-24 (20 products per shop):
 | `clarks`, `huckberry`, `timberland`, `ecco`, `lacoste`, `massimodutti`, `mrporter`, `steepandcheap` | | Off: blocked in run 2 |
 
 Shops that block automated visits are switched off rather than retried every day; each has a `Note` in config
-saying how it failed. They are candidates for an affiliate product feed or for prices read from their sale
-newsletters.
+saying how it failed. They are candidates for an affiliate product feed; their sale emails are already read (see
+[Prices from sale emails](#prices-from-sale-emails)).
 
 The `ProductUrlPattern` values in `src/SmartStylist.Worker/appsettings.json` are educated guesses at each shop's
 product URL shape. If a shop fails with "no product URLs in the sitemap", open its sitemap in a browser and fix the
@@ -104,6 +105,65 @@ the saved HTML.
 
 `Strategy` can be `Auto`, `Shopify`, `SitemapJsonLd` or `BrowserJsonLd`. Remove a shop from the list to
 disable it; its history is kept.
+
+## Prices from sale emails
+
+Shops that block the collectors still email their sales. `newsletters` reads those emails and adds the prices
+to the same price history, marked `Source = Newsletter` and dated on the day the email arrived.
+
+How one email is handled:
+
+1. The sender is matched to a shop by domain (`jcrew@e.jcrew.com` → `jcrew.com`). Senders that match no shop
+   are recorded as `UnknownSender` and never sent anywhere. Add `"EmailDomains": ["levi.com"]` to a shop if its
+   emails come from a different domain.
+2. The HTML is turned into plain text. Links become short ids like `[L3]`.
+3. Claude (`Newsletters:Model`, default `claude-haiku-5-5`) lists the products whose prices are printed, copying
+   each price exactly as written.
+4. Code checks every price: the same number must appear in the email text, the "was" price must be higher, and
+   a currency symbol in the price wins over what the model said. Anything that fails is dropped and counted as
+   rejected. The model never decides a stored amount on its own.
+5. Product links are followed through the tracking redirects, but only up to the shop's own host. The shop page
+   itself is not downloaded. When a link resolves, the product is keyed by its page URL, so the same product from
+   another email or from a crawl lines up. When it doesn't, the product is keyed by its title.
+6. A crawled price for the same product and day is never overwritten by an email price.
+
+Every email is stored once by Message-ID. Failed emails (for example an API outage) are retried on the next read.
+
+### Setup
+
+Create an API key at https://console.anthropic.com (separate from a Claude subscription; add a card and a small
+credit top-up), then keep it out of git:
+
+```bash
+dotnet user-secrets set "Newsletters:AnthropicApiKey" "sk-ant-..." --project src/SmartStylist.Worker
+```
+
+Try it on saved emails first. In Gmail, open a sale email, ⋮ → "Download message", put the `.eml` files in a
+folder, then:
+
+```bash
+dotnet run --project src/SmartStylist.Worker -- newsletters --folder ~/sale-emails
+```
+
+To read a mailbox every hour, fill in `Newsletters:Imap` and set the password as a secret. For Gmail, make a
+label (e.g. `Sales`) with a filter that applies it to shop emails, and create an app password
+(Google account → Security → 2-Step Verification → App passwords):
+
+```bash
+dotnet user-secrets set "Newsletters:Imap:Host" "imap.gmail.com" --project src/SmartStylist.Worker
+dotnet user-secrets set "Newsletters:Imap:Username" "you@gmail.com" --project src/SmartStylist.Worker
+dotnet user-secrets set "Newsletters:Imap:Password" "<app password>" --project src/SmartStylist.Worker
+dotnet user-secrets set "Newsletters:Imap:Folder" "Sales" --project src/SmartStylist.Worker
+dotnet run --project src/SmartStylist.Worker -- newsletters
+```
+
+The mailbox is opened read-only: nothing is marked read, moved or deleted. With `Imap:Host` set, the Hangfire
+worker also schedules `import-newsletters` on `Newsletters:Cron`. A dedicated mailbox that you forward sale emails
+to works the same way.
+
+Cost: one model call per new email, with effort set to low. With Claude Haiku 5.5 a typical sale email (about 15k tokens)
+costs roughly $0.002, so $5 of API credit covers about 2,000 emails. Set `Newsletters:Model` to `claude-opus-5-5`
+for harder emails at about $0.08 each.
 
 ## Development
 

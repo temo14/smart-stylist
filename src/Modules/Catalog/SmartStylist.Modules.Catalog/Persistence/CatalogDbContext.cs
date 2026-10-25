@@ -15,6 +15,8 @@ public sealed class CatalogDbContext(DbContextOptions<CatalogDbContext> options)
 
     public DbSet<CollectionRun> CollectionRuns => Set<CollectionRun>();
 
+    public DbSet<NewsletterEmail> NewsletterEmails => Set<NewsletterEmail>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema(Schema);
@@ -50,6 +52,7 @@ public sealed class CatalogDbContext(DbContextOptions<CatalogDbContext> options)
             snapshot.Property(s => s.Price).HasPrecision(12, 2);
             snapshot.Property(s => s.ListPrice).HasPrecision(12, 2);
             snapshot.Property(s => s.Currency).HasMaxLength(3).IsFixedLength();
+            snapshot.Property(s => s.Source).HasConversion<string>().HasMaxLength(16);
             snapshot.HasOne(s => s.Product).WithMany(p => p.Snapshots).OnDelete(DeleteBehavior.Cascade);
         });
 
@@ -60,6 +63,19 @@ public sealed class CatalogDbContext(DbContextOptions<CatalogDbContext> options)
             run.Property(r => r.Status).HasConversion<string>().HasMaxLength(16);
             run.Property(r => r.Error).HasMaxLength(4000);
             run.HasOne(r => r.Shop).WithMany().OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<NewsletterEmail>(email =>
+        {
+            email.HasIndex(e => e.MessageId).IsUnique();
+            email.HasIndex(e => e.ReceivedAt);
+            email.Property(e => e.MessageId).HasMaxLength(500);
+            email.Property(e => e.From).HasMaxLength(320);
+            email.Property(e => e.Subject).HasMaxLength(500);
+            email.Property(e => e.Status).HasConversion<string>().HasMaxLength(16);
+            email.Property(e => e.PromoCode).HasMaxLength(100);
+            email.Property(e => e.Error).HasMaxLength(4000);
+            email.HasOne(e => e.Shop).WithMany().OnDelete(DeleteBehavior.SetNull);
         });
     }
 }

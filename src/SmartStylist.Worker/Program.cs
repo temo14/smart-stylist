@@ -10,6 +10,7 @@ using SmartStylist.Worker;
 //   dotnet run -- migrate              -> apply database migrations and sync shops from config
 //   dotnet run -- install-browser      -> download headless Chromium for shops that need a real browser
 //   dotnet run -- probe <url> [--browser]  -> show what the parser reads from one product page and save the HTML
+//   dotnet run -- newsletters [--folder <dir>]  -> price new sale emails from the IMAP mailbox, or from saved .eml files
 var command = CliCommand.Parse(args);
 
 var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using SmartStylist.Modules.Catalog;
 using SmartStylist.Modules.Catalog.Collection;
+using SmartStylist.Modules.Catalog.Newsletters;
 using SmartStylist.Modules.Catalog.Persistence;
 
 namespace SmartStylist.Worker;
@@ -12,6 +13,7 @@ internal sealed class RecurringJobsSetup(
     IServiceScopeFactory scopes,
     IRecurringJobManager recurringJobs,
     IOptions<CatalogOptions> options,
+    IOptions<NewsletterOptions> newsletterOptions,
     ILogger<RecurringJobsSetup> logger) : IHostedService
 {
     public async Task StartAsync(CancellationToken cancellationToken)
@@ -39,6 +41,23 @@ internal sealed class RecurringJobsSetup(
 
         logger.LogInformation("Scheduled daily price collection for {Count} shops ({Cron} UTC)",
             shops.Count(s => s.Enabled), options.Value.DailyCron);
+
+        var newsletters = newsletterOptions.Value;
+        if (string.IsNullOrWhiteSpace(newsletters.Imap.Host))
+        {
+            recurringJobs.RemoveIfExists(ImportNewslettersJob.RecurringJobId);
+            logger.LogInformation("Sale email reading is off: Newsletters:Imap:Host is empty");
+        }
+        else
+        {
+            recurringJobs.AddOrUpdate<ImportNewslettersJob>(
+                ImportNewslettersJob.RecurringJobId,
+                job => job.RunAsync(CancellationToken.None),
+                newsletters.Cron,
+                new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
+            logger.LogInformation("Scheduled sale email reading from {Host}/{Folder} ({Cron} UTC)",
+                newsletters.Imap.Host, newsletters.Imap.Folder, newsletters.Cron);
+        }
     }
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;

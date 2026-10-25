@@ -29,4 +29,6 @@ public sealed class PriceSnapshot
     public bool? InStock { get; set; }
 
     public DateTimeOffset CapturedAt { get; set; }
+
+    public PriceSource Source { get; set; } = PriceSource.Crawl;
 }

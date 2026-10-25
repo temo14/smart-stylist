@@ -117,7 +117,7 @@ How one email is handled:
    are recorded as `UnknownSender` and never sent anywhere. Add `"EmailDomains": ["levi.com"]` to a shop if its
    emails come from a different domain.
 2. The HTML is turned into plain text. Links become short ids like `[L3]`.
-3. Claude (`Newsletters:Model`, default `claude-opus-5-5`) lists the products whose prices are printed, copying
+3. Claude (`Newsletters:Model`, default `claude-haiku-5-5`) lists the products whose prices are printed, copying
    each price exactly as written.
 4. Code checks every price: the same number must appear in the email text, the "was" price must be higher, and
    a currency symbol in the price wins over what the model said. Anything that fails is dropped and counted as
@@ -131,7 +131,8 @@ Every email is stored once by Message-ID. Failed emails (for example an API outa
 
 ### Setup
 
-Get an API key at https://console.anthropic.com and keep it out of git:
+Create an API key at https://console.anthropic.com (separate from a Claude subscription; add a card and a small
+credit top-up), then keep it out of git:
 
 ```bash
 dotnet user-secrets set "Newsletters:AnthropicApiKey" "sk-ant-..." --project src/SmartStylist.Worker
@@ -160,7 +161,9 @@ The mailbox is opened read-only: nothing is marked read, moved or deleted. With 
 worker also schedules `import-newsletters` on `Newsletters:Cron`. A dedicated mailbox that you forward sale emails
 to works the same way.
 
-Cost: one model call per new email, with effort set to low. A typical sale email is a few thousand tokens.
+Cost: one model call per new email, with effort set to low. With Claude Haiku 5.5 a typical sale email (about 15k tokens)
+costs roughly $0.002, so $5 of API credit covers about 2,000 emails. Set `Newsletters:Model` to `claude-opus-5-5`
+for harder emails at about $0.08 each.
 
 ## Development
 

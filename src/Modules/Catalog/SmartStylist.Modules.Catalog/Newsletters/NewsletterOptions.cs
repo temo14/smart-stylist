@@ -11,7 +11,7 @@ public sealed class NewsletterOptions
     public int LookbackDays { get; set; } = 14;
 
     /// <summary>Claude model that reads the emails.</summary>
-    public string Model { get; set; } = "claude-opus-5-5";
+    public string Model { get; set; } = "claude-haiku-5-5";
 
     /// <summary>
     /// Anthropic API key. Leave empty in appsettings.json and set it with user-secrets or the

@@ -127,6 +127,10 @@ How one email is handled:
    another email or from a crawl lines up. When it doesn't, the product is keyed by its title.
 6. A crawled price for the same product and day is never overwritten by an email price.
 
+Forwarded emails work too, so you can forward sale emails to a mailbox the worker can reach. For inline
+forwards (Gmail "Forward", Outlook "FW:") the shop is read from the forwarded "From:" line; for "Forward as
+attachment" the attached email is used as is. A forwarded email's prices are dated on the day it was forwarded.
+
 Every email is stored once by Message-ID. Failed emails (for example an API outage) are retried on the next read.
 
 ### Setup

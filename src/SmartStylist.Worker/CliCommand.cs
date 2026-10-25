@@ -111,7 +111,19 @@ internal sealed record CliCommand(string Name, IReadOnlyList<string> ShopKeys, i
         IMailSource source = Folder is null
             ? new ImapMailSource(provider.GetRequiredService<IOptions<NewsletterOptions>>().Value.Imap)
             : new EmlFolderMailSource(Folder);
-        var result = await provider.GetRequiredService<NewsletterImportService>().ImportAsync(source, cancellationToken);
+        NewsletterImportResult result;
+        try
+        {
+            result = await provider.GetRequiredService<NewsletterImportService>().ImportAsync(source, cancellationToken);
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or DirectoryNotFoundException)
+        {
+            // Setup problems (no mailbox access, wrong folder path): one clear line instead of a stack trace.
+            Console.WriteLine(ex.Message);
+            runLog.WriteLine(ex.Message);
+            return;
+        }
+
 
         foreach (var email in result.Processed)
         {

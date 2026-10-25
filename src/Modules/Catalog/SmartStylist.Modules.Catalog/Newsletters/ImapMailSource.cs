@@ -1,3 +1,4 @@
+using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using MailKit;
 using MailKit.Net.Imap;
@@ -24,10 +25,38 @@ public sealed class ImapMailSource(ImapOptions options) : IMailSource
         }
 
         using var client = new ImapClient();
-        await client.ConnectAsync(options.Host, options.Port, options.UseSsl ? SecureSocketOptions.SslOnConnect : SecureSocketOptions.StartTlsWhenAvailable, cancellationToken);
-        await client.AuthenticateAsync(options.Username, options.Password, cancellationToken);
+        try
+        {
+            await client.ConnectAsync(options.Host, options.Port, options.UseSsl ? SecureSocketOptions.SslOnConnect : SecureSocketOptions.StartTlsWhenAvailable, cancellationToken);
+        }
+        catch (SocketException ex)
+        {
+            throw new InvalidOperationException(
+                $"Can't reach {options.Host}:{options.Port} ({ex.SocketErrorCode}). A firewall, antivirus or company network is " +
+                $"probably blocking port {options.Port}; check with: Test-NetConnection {options.Host} -Port {options.Port}", ex);
+        }
 
-        var folder = await client.GetFolderAsync(options.Folder, cancellationToken);
+        try
+        {
+            await client.AuthenticateAsync(options.Username, options.Password, cancellationToken);
+        }
+        catch (AuthenticationException ex)
+        {
+            throw new InvalidOperationException(
+                $"{options.Host} rejected the login for {options.Username}. For Gmail, use an app password, not the account password.", ex);
+        }
+
+        IMailFolder folder;
+        try
+        {
+            folder = await client.GetFolderAsync(options.Folder, cancellationToken);
+        }
+        catch (FolderNotFoundException ex)
+        {
+            throw new InvalidOperationException(
+                $"Folder '{options.Folder}' does not exist on {options.Host}. For Gmail use INBOX, a label name, or \"[Gmail]/All Mail\".", ex);
+        }
+
         await folder.OpenAsync(FolderAccess.ReadOnly, cancellationToken);
 
         // IMAP SINCE has day precision; anything older is filtered again below.

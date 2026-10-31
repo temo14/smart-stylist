@@ -38,7 +38,9 @@ public sealed partial record InboxMessage(
         var id = string.IsNullOrWhiteSpace(message.MessageId)
             ? "sha256:" + Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes($"{from}|{message.Date:O}|{subject}")))
             : message.MessageId;
-        return new InboxMessage(id, originalSender ?? from, subject, message.Date, message.HtmlBody, message.TextBody,
+
+        // Emails carry the sender's offset; Postgres only stores UTC.
+        return new InboxMessage(id, originalSender ?? from, subject, message.Date.ToUniversalTime(), message.HtmlBody, message.TextBody,
             ForwardedBy: originalSender is null ? null : from);
     }
 

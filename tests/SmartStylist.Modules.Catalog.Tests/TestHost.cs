@@ -11,11 +11,15 @@ using SmartStylist.Modules.Catalog.Persistence;
 
 namespace SmartStylist.Modules.Catalog.Tests;
 
-/// <summary>The Catalog module wired to in-memory SQLite and a fake web, so collection runs end to end offline.</summary>
+/// <summary>
+/// The Catalog module wired to a fake web, so collection runs end to end offline. The database is in-memory SQLite,
+/// or real Postgres through <see cref="OnPostgres"/> for what SQLite does not enforce.
+/// </summary>
 internal sealed class TestHost : IAsyncDisposable
 {
     private readonly SqliteConnection _connection = new("DataSource=:memory:");
     private readonly ServiceProvider _services;
+    private readonly bool _postgres;
 
     public FakeWeb Web { get; } = new();
 
@@ -26,8 +30,13 @@ internal sealed class TestHost : IAsyncDisposable
     public FakeTimeProvider Time { get; } = new(new DateTimeOffset(2026, 10, 24, 5, 0, 0, TimeSpan.Zero));
 
     public TestHost(params ShopOptions[] shops)
+        : this(null, shops)
     {
-        _connection.Open();
+    }
+
+    private TestHost(string? postgres, ShopOptions[] shops)
+    {
+        _postgres = postgres is not null;
 
         var services = new ServiceCollection();
         services.AddLogging();
@@ -37,10 +46,21 @@ internal sealed class TestHost : IAsyncDisposable
             o.MaxProductsPerShop = 50;
             o.Shops = [.. shops];
         });
-        services.AddDbContext<CatalogDbContext>(o => o
-            .UseSqlite(_connection)
-            .UseSnakeCaseNamingConvention()
-            .ReplaceService<IModelCustomizer, SqliteDateTimeOffsetCustomizer>());
+        if (postgres is not null)
+        {
+            services.AddDbContext<CatalogDbContext>(o => o
+                .UseNpgsql(postgres, npgsql => npgsql.MigrationsHistoryTable("__ef_migrations_history", CatalogDbContext.Schema))
+                .UseSnakeCaseNamingConvention());
+        }
+        else
+        {
+            _connection.Open();
+            services.AddDbContext<CatalogDbContext>(o => o
+                .UseSqlite(_connection)
+                .UseSnakeCaseNamingConvention()
+                .ReplaceService<IModelCustomizer, SqliteDateTimeOffsetCustomizer>());
+        }
+
         services.AddCatalogCollection();
         services.AddHttpClient(HttpPageFetcher.ClientName).ConfigurePrimaryHttpMessageHandler(() => Web);
         services.AddSingleton<TimeProvider>(Time);
@@ -54,10 +74,21 @@ internal sealed class TestHost : IAsyncDisposable
         _services = services.BuildServiceProvider();
     }
 
+    public static TestHost OnPostgres(string connectionString, params ShopOptions[] shops) => new(connectionString, shops);
+
     public async Task InitializeAsync()
     {
         await using var scope = _services.CreateAsyncScope();
-        await scope.ServiceProvider.GetRequiredService<CatalogDbContext>().Database.EnsureCreatedAsync();
+        var database = scope.ServiceProvider.GetRequiredService<CatalogDbContext>().Database;
+        if (_postgres)
+        {
+            await database.MigrateAsync();
+        }
+        else
+        {
+            await database.EnsureCreatedAsync();
+        }
+
         await scope.ServiceProvider.GetRequiredService<ShopCatalogSync>().SyncAsync(CancellationToken.None);
     }
 

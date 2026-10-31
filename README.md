@@ -22,7 +22,7 @@ PostgreSQL schema (`catalog` here, later `wardrobe`, `orders`, `landedcost`), an
 You need the .NET 10 SDK and Docker.
 
 ```bash
-docker compose up -d                                         # PostgreSQL 16 on localhost:5432
+docker compose up -d                                         # PostgreSQL 16 on localhost:5432 (POSTGRES_PORT=5433 if taken)
 dotnet run --project src/SmartStylist.Worker -- install-browser   # once: headless Chromium for shops that block plain HTTP
 dotnet run --project src/SmartStylist.Worker -- collect --limit 20   # quick test: 20 products per shop, then prints the report
 ```
@@ -172,7 +172,7 @@ for harder emails at about $0.08 each.
 ## Development
 
 ```bash
-dotnet test                       # no database or network needed
+dotnet test                       # needs Docker: the email date tests run on real Postgres
 dotnet tool restore
 dotnet ef migrations add <Name> --project src/Modules/Catalog/SmartStylist.Modules.Catalog \
   --startup-project src/SmartStylist.Worker --output-dir Persistence/Migrations

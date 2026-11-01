@@ -64,6 +64,9 @@ public static class CatalogModule
             sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<PriceCollectionService>>()));
         services.AddScoped<ShopCatalogSync>();
         services.AddScoped(sp => new ProductPageProbe(sp.GetRequiredService<HttpPageFetcher>(), sp.GetRequiredService<BrowserPageFetcher>()));
+        services.AddScoped(sp => new PageCaptureService(
+            sp.GetRequiredService<CatalogDbContext>(),
+            sp.GetRequiredService<TimeProvider>()));
         services.AddScoped<CollectPricesJob>();
         services.AddScoped<DataQualityReport>();
         services.AddSingleton(TimeProvider.System);

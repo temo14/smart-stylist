@@ -38,7 +38,7 @@ dotnet run --project src/SmartStylist.Worker -- report                 # print t
 dotnet run --project src/SmartStylist.Worker -- probe <product url> [--browser]   # what the parser reads from one page; saves the HTML
 dotnet run --project src/SmartStylist.Worker -- newsletters [--folder <dir>]           # price new sale emails (mailbox, or saved .eml files)
 dotnet run --project src/SmartStylist.Worker                           # leave running: collects every shop daily at 05:00 UTC
-dotnet run --project src/SmartStylist.Web                              # http://localhost:5227 (report) and /hangfire (jobs)
+dotnet run --project src/SmartStylist.Web                              # http://localhost:5227 (report, /hangfire jobs, browser extension)
 ```
 
 ## How prices are collected
@@ -105,6 +105,18 @@ the saved HTML.
 
 `Strategy` can be `Auto`, `Shopify`, `SitemapJsonLd` or `BrowserJsonLd`. Remove a shop from the list to
 disable it; its history is kept.
+
+## Prices from your own browser
+
+`extension/` is a Chrome extension for the shops that block the collectors. When you open a page on one of your
+shops, it sends the page's structured data (JSON-LD, microdata, price meta tags), never the rest of the page, to
+`POST http://localhost:5227/api/captures`. `SmartStylist.Web` parses it like a crawled page and stores the price
+with `Source = Extension`. The popup shows the price, sizes in stock and the lowest price seen from any source.
+
+To use it, start the web app, open `chrome://extensions`, turn on Developer mode, choose **Load unpacked** and pick
+the `extension` folder. Nothing is saved while the app is off; the toolbar icon then shows a red `!`.
+
+A new shop has to be added both to `Catalog:Shops` and to `matches` in `extension/manifest.json`.
 
 ## Prices from sale emails
 

@@ -1,0 +1,39 @@
+{
+  "manifest_version": 3,
+  "name": "Smart Stylist price saver",
+  "version": "0.1.0",
+  "description": "Saves the price of product pages you open on your shops to your own Smart Stylist app.",
+  "permissions": ["storage"],
+  "host_permissions": ["http://localhost:5227/*"],
+  "background": { "service_worker": "background.js" },
+  "action": { "default_popup": "popup.html", "default_title": "Smart Stylist" },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.levi.com/*",
+        "https://shop.lululemon.com/*",
+        "https://*.adidas.com/*",
+        "https://*.reebok.com/*",
+        "https://*.underarmour.com/*",
+        "https://*.steepandcheap.com/*",
+        "https://*.kohls.com/*",
+        "https://*.dressup.ge/*",
+        "https://*.uniqlo.com/*",
+        "https://*.patagonia.com/*",
+        "https://*.jcrew.com/*",
+        "https://*.brooksbrothers.com/*",
+        "https://*.lacoste.com/*",
+        "https://*.ssense.com/*",
+        "https://*.mrporter.com/*",
+        "https://*.thursdayboots.com/*",
+        "https://*.huckberry.com/*",
+        "https://*.clarks.com/*",
+        "https://us.ecco.com/*",
+        "https://*.timberland.com/*",
+        "https://*.massimodutti.com/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

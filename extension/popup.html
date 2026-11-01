@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Smart Stylist</title>
+  <style>
+    body { box-sizing: border-box; width: 300px; margin: 0; padding: 12px; font: 14px/1.4 system-ui, sans-serif; color: #1f2328; background: #fff; }
+    h1 { margin: 0 0 2px; font-size: 14px; }
+    p { margin: 6px 0; }
+    .muted { color: #59636e; font-size: 12px; }
+    .price { font-size: 20px; font-weight: 600; }
+    .was { color: #59636e; text-decoration: line-through; margin-left: 6px; font-size: 14px; font-weight: 400; }
+    .good { color: #1a7f37; }
+    .warn { color: #9a6700; }
+    ul { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0; padding: 0; list-style: none; }
+    li { padding: 1px 6px; border: 1px solid #d1d9e0; border-radius: 4px; font-size: 12px; }
+    li.out { color: #818b98; text-decoration: line-through; }
+    button { width: 100%; margin-top: 8px; padding: 6px; font: inherit; cursor: pointer; }
+    @media (prefers-color-scheme: dark) {
+      body { color: #f0f6fc; background: #151b23; }
+      .muted, .was { color: #9198a1; }
+      .good { color: #3fb950; }
+      .warn { color: #d29922; }
+      li { border-color: #3d444d; }
+    }
+  </style>
+</head>
+<body>
+  <div id="result"></div>
+  <button id="save">Save this page again</button>
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -8,4 +8,7 @@ public enum PriceSource
 
     /// <summary>Read from a sale email the shop sent.</summary>
     Newsletter,
+
+    /// <summary>Read from a product page the user opened, by the browser extension.</summary>
+    Extension,
 }

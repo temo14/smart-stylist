@@ -23,6 +23,17 @@ public class ExtractionGuardTests
         Assert.Equal("https://x.com/chino", offer.LinkUrl);
     }
 
+    [Fact]
+    public void Rejects_a_product_name_the_email_does_not_print()
+    {
+        var email = Email("Jacket $159.00 today");
+
+        var (kept, rejected) = ExtractionGuard.Check(With(new ExtractedProduct("Product 1", null, "$159.00", null, "USD")), email, "USD");
+
+        Assert.Empty(kept);
+        Assert.Equal(1, rejected);
+    }
+
     [Theory]
     [InlineData("$49.00")] // not in the email at all
     [InlineData("$59")] // only appears inside $159.00

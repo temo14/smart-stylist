@@ -9,7 +9,7 @@ public sealed record NewsletterOffer(string Title, string? LinkUrl, decimal Pric
 
 /// <summary>
 /// Deterministic checks on what the model returned. Money is never taken on trust: a price is kept
-/// only if the same amount is printed in the email text.
+/// only if the same amount is printed in the email text, under a product name that is printed there too.
 /// </summary>
 internal static partial class ExtractionGuard
 {
@@ -26,7 +26,8 @@ internal static partial class ExtractionGuard
         {
             var title = item.Title?.Trim();
             var price = PriceParser.Parse(item.Price);
-            if (string.IsNullOrEmpty(title) || price is null || price >= MaxPrice || !IsPrinted(item.Price, haystack))
+            if (string.IsNullOrEmpty(title) || !haystack.Contains(Squash(title), StringComparison.OrdinalIgnoreCase)
+                || price is null || price >= MaxPrice || !IsPrinted(item.Price, haystack))
             {
                 rejected++;
                 continue;

@@ -49,5 +49,8 @@ public enum NewsletterStatus
     /// <summary>The sender does not match any shop in Catalog:Shops.</summary>
     UnknownSender,
 
+    /// <summary>An order update or account email from a shop. Never sent to the model.</summary>
+    Transactional,
+
     Failed,
 }

@@ -83,6 +83,10 @@ public sealed partial class NewsletterImportService
                 {
                     email.Status = NewsletterStatus.UnknownSender;
                 }
+                else if (message.IsTransactional)
+                {
+                    email.Status = NewsletterStatus.Transactional;
+                }
                 else
                 {
                     await PriceAsync(message, email, match.Shop, match.Domains, cancellationToken);

@@ -39,6 +39,19 @@ public class NewsletterImportServiceTests
         host.InScopeAsync(sp => sp.GetRequiredService<CatalogDbContext>().PriceSnapshots.Include(s => s.Product).OrderBy(s => s.Price).ToListAsync());
 
     [Fact]
+    public async Task Order_emails_are_skipped_without_calling_the_model()
+    {
+        await using var host = new TestHost(JCrew);
+        await host.InitializeAsync();
+
+        var result = await ImportAsync(host, Sale() with { IsTransactional = true });
+
+        Assert.Equal(NewsletterStatus.Transactional, Assert.Single(result.Processed).Status);
+        Assert.Empty(host.Extractor.Inputs);
+        Assert.Empty(await SnapshotsAsync(host));
+    }
+
+    [Fact]
     public async Task Prices_from_a_sale_email_are_checked_and_stored_on_the_email_date()
     {
         await using var host = new TestHost(JCrew);

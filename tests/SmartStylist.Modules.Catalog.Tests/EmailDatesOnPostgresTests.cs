@@ -25,6 +25,7 @@ public class EmailDatesOnPostgresTests : IClassFixture<EmailDatesOnPostgresTests
         var mime = new MimeMessage { Subject = "Extra 40% off", MessageId = $"{storedAt}@e.jcrew.com", Body = new TextPart("html") { Text = "<a href=\"https://click.e.jcrew.com/chino\">Chino</a> $53.70" } };
         mime.From.Add(MailboxAddress.Parse("jcrew@e.jcrew.com"));
         mime.Headers[HeaderId.Date] = dateHeader;
+        mime.Headers[HeaderId.ListUnsubscribe] = "<mailto:unsubscribe@e.jcrew.com>";
 
         await using var host = TestHost.OnPostgres(_database.ConnectionString, JCrew);
         await host.InitializeAsync();

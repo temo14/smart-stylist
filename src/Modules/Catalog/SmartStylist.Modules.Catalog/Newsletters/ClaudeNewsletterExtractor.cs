@@ -18,6 +18,10 @@ internal sealed class ClaudeNewsletterExtractor(IOptions<NewsletterOptions> opti
         - Copy "price" and "list_price" exactly as printed, currency symbol included. "list_price" is the crossed-out
           or "was" price; use null when the email shows only one price.
         - When a percentage off is announced without a printed price for a product, do not list that product.
+        - Only list a single product whose real name is printed in the email text. Never invent a name such as
+          "Product 1"; when the name only appears in a picture, do not list that product.
+        - Do not list category prices ("Jeans from $39"), price bands ("Under £40") or multi-item deals ("2 suits $1199").
+        - Order confirmations, shipping updates and receipts are not sales: return an empty list for them.
         - "link_id" is the id in square brackets (like L12) right after the product's name, image or "shop now" text.
           Use null when no link clearly belongs to the product.
         - Image descriptions appear as [image: ...]; prices inside them count only if they look like real price text.

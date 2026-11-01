@@ -115,7 +115,8 @@ How one email is handled:
 
 1. The sender is matched to a shop by domain (`jcrew@e.jcrew.com` → `jcrew.com`). Senders that match no shop
    are recorded as `UnknownSender` and never sent anywhere. Add `"EmailDomains": ["levi.com"]` to a shop if its
-   emails come from a different domain.
+   emails come from a different domain. A shop email with no `List-Unsubscribe` header (order update, password
+   reset) is recorded as `Transactional` and never sent to the model. Forwarded emails skip this check.
 2. The HTML is turned into plain text. Links become short ids like `[L3]`.
 3. Claude (`Newsletters:Model`, default `claude-haiku-5-5`) lists the products whose prices are printed, copying
    each price exactly as written.

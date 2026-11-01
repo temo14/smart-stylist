@@ -15,6 +15,17 @@ public class ForwardedEmailTests
     }
 
     [Fact]
+    public void Email_without_an_unsubscribe_header_is_transactional()
+    {
+        var order = Mail("jcrew@e.jcrew.com", "Your order is on its way", "<p>Chino $53.70</p>");
+        var sale = Mail("jcrew@e.jcrew.com", "Extra 40% off", "<p>Chino $53.70</p>");
+        sale.Headers.Add(HeaderId.ListUnsubscribe, "<mailto:unsubscribe@e.jcrew.com>");
+
+        Assert.True(InboxMessage.FromMime(order).IsTransactional);
+        Assert.False(InboxMessage.FromMime(sale).IsTransactional);
+    }
+
+    [Fact]
     public void Gmail_inline_forward_uses_the_shop_as_sender()
     {
         var html = """
@@ -30,6 +41,7 @@ public class ForwardedEmailTests
         Assert.Equal("temo@work.example", message.ForwardedBy);
         Assert.Equal("Four must-have fall pants", message.Subject);
         Assert.Contains("Chino $53.70", message.Html);
+        Assert.False(message.IsTransactional);
     }
 
     [Fact]
